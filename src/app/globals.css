@@ -813,8 +813,8 @@ textarea {
 .pdp-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
-  margin-top: 1.1rem;
+  gap: 0.5rem;
+  margin-top: 1.15rem;
 }
 
 .pdp-chip {
@@ -838,11 +838,11 @@ textarea {
 }
 
 .pdp-variants {
-  margin-top: 1.15rem;
+  margin-top: 1.35rem;
 }
 
 .pdp-variants__label {
-  margin: 0 0 0.45rem;
+  margin: 0 0 0.55rem;
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--text-muted);
@@ -853,19 +853,21 @@ textarea {
 .pdp-variants__list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  gap: 0.5rem;
 }
 
 .pdp-variant {
   display: inline-flex;
   align-items: center;
-  min-height: 2.1rem;
-  padding: 0.35rem 0.75rem;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.85rem;
   border-radius: 999px;
   border: 1px solid rgba(39, 39, 39, 0.12);
   background: #fff;
   font-size: 0.82rem;
   font-weight: 500;
+  line-height: 1;
   color: var(--text-main);
   transition: border-color 0.15s ease, background 0.15s ease;
 }
@@ -882,21 +884,33 @@ textarea {
 }
 
 .pdp-cta {
-  margin-top: auto;
-  padding-top: 1.35rem;
+  margin-top: 1.5rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.55rem;
+  gap: 0.5rem;
   width: 100%;
-  min-height: 3.15rem;
+  min-height: 3.25rem;
+  padding: 0 1.25rem;
   border-radius: 999px;
   background: var(--brand-gold);
   color: #fff;
   font-weight: 600;
   font-size: 1.02rem;
+  line-height: 1;
   box-shadow: 0 12px 28px rgba(123, 107, 54, 0.25);
   transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.pdp-cta span {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.pdp-cta svg {
+  display: block;
+  flex-shrink: 0;
 }
 
 .pdp-cta:hover {
@@ -906,11 +920,22 @@ textarea {
 }
 
 .pdp-buy__fineprint {
-  margin: 0.75rem 0 0;
+  margin: 0.85rem 0 0;
   text-align: center;
   font-size: 0.75rem;
   line-height: 1.4;
   color: #a3a09a;
+}
+
+@media (min-width: 1024px) {
+  .pdp-cta {
+    margin-top: auto;
+    padding-top: 0;
+  }
+
+  .pdp-buy {
+    padding-bottom: 1.5rem;
+  }
 }
 
 .pdp-related {
