@@ -19,7 +19,8 @@ export function SiteHeader({ compact = false }: { compact?: boolean }) {
 
         <nav className="header-nav desktop-nav" aria-label="Навигация">
           <Link href="/#catalog">Каталог</Link>
-          <Link href="/partner">Стать партнёром</Link>
+          <Link href="/partner">Регистрация</Link>
+          <Link href="/cabinet/login">Войти</Link>
           <Link href="/cabinet" className="btn btn-primary btn-sm">
             Кабинет
           </Link>
@@ -44,7 +45,10 @@ export function SiteHeader({ compact = false }: { compact?: boolean }) {
             Каталог
           </Link>
           <Link href="/partner" onClick={() => setOpen(false)}>
-            Стать партнёром
+            Регистрация
+          </Link>
+          <Link href="/cabinet/login" onClick={() => setOpen(false)}>
+            Войти
           </Link>
           <Link
             href="/cabinet"

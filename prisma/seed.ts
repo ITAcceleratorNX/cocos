@@ -80,24 +80,66 @@ async function main() {
     });
   }
 
-  await prisma.partner.upsert({
-    where: { nick: "aigerim" },
-    create: {
-      name: "Айгерим (demo)",
-      phone: "77001112233",
-      city: "Алматы",
-      nick: "aigerim",
-      instagram: "@aigerim.demo",
-      bio: "Мама из Алматы. Рекомендую то, чем пользуюсь сама.",
-      status: "APPROVED",
-      commissionRate: 15,
-      approvedAt: new Date(),
-      agreedAt: new Date(),
-    },
-    update: {
-      status: "APPROVED",
-      approvedAt: new Date(),
-    },
+  async function upsertClient(data: {
+    nick: string;
+    referralCode: string;
+    name: string;
+    phone: string;
+    email: string;
+    city: string;
+    bio?: string;
+  }) {
+    const byCode = await prisma.partner.findUnique({
+      where: { referralCode: data.referralCode },
+    });
+    const byNick = await prisma.partner.findUnique({ where: { nick: data.nick } });
+    const byPhone = await prisma.partner.findUnique({ where: { phone: data.phone } });
+    const existing = byCode || byNick || byPhone;
+    if (existing) {
+      await prisma.partner.update({
+        where: { id: existing.id },
+        data: {
+          name: data.name,
+          phone: data.phone,
+          email: data.email,
+          city: data.city,
+          nick: data.nick,
+          referralCode: data.referralCode,
+          bio: data.bio,
+          status: "APPROVED",
+          approvedAt: new Date(),
+        },
+      });
+      return;
+    }
+    await prisma.partner.create({
+      data: {
+        ...data,
+        status: "APPROVED",
+        commissionRate: 15,
+        approvedAt: new Date(),
+        agreedAt: new Date(),
+      },
+    });
+  }
+
+  await upsertClient({
+    nick: "aigerim",
+    referralCode: "COCO001",
+    name: "Айгерим (demo)",
+    phone: "77001112233",
+    email: "aigerim@demo.cocos.kz",
+    city: "Алматы",
+    bio: "Мама из Алматы. Рекомендую то, чем пользуюсь сама.",
+  });
+
+  await upsertClient({
+    nick: "dana",
+    referralCode: "COCO002",
+    name: "Дана (demo)",
+    phone: "77002223344",
+    email: "dana@demo.cocos.kz",
+    city: "Астана",
   });
 
   await prisma.setting.upsert({
@@ -111,7 +153,9 @@ async function main() {
     update: {},
   });
 
-  console.log("Seed OK: products + demo partner @aigerim / 77001112233");
+  console.log(
+    "Seed OK: products + clients COCO001/77001112233 + COCO002/77002223344 (SMS code 000000)",
+  );
 }
 
 main()

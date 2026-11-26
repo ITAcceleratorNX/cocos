@@ -4,6 +4,7 @@ import { getPartnerSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getAppUrl } from "@/lib/settings";
+import { referralStats } from "@/lib/referral";
 import { CabinetActions } from "./CabinetActions";
 import { ProfileForm } from "./ProfileForm";
 import { CopyLinkButton } from "./CopyLinkButton";
@@ -14,79 +15,63 @@ export default async function CabinetPage() {
 
   const partner = session.partner;
   const appUrl = getAppUrl();
-  const link = `${appUrl}/p/${partner.nick}`;
 
-  const [clicks, leads, attributions, commissions, products] = await Promise.all([
-    prisma.click.count({ where: { partnerId: partner.id } }),
-    prisma.lead.count({ where: { partnerId: partner.id } }),
-    prisma.attribution.count({ where: { partnerId: partner.id } }),
-    prisma.commission.findMany({
-      where: { partnerId: partner.id },
-      include: { order: true },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    }),
+  const [stats, products, bonuses, byProduct] = await Promise.all([
+    referralStats({ partnerId: partner.id }),
     prisma.product.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } }),
+    prisma.bonusLedger.findMany({
+      where: { partnerId: partner.id },
+      orderBy: { createdAt: "desc" },
+      take: 30,
+    }),
+    prisma.referralEvent.groupBy({
+      by: ["productId", "type"],
+      where: { partnerId: partner.id },
+      _count: { _all: true },
+    }),
   ]);
-
-  const confirmedSum = commissions
-    .filter((c) => c.status === "CONFIRMED" || c.status === "PAID")
-    .reduce((s, c) => s + c.amountKzt, 0);
-  const pendingSum = commissions
-    .filter((c) => c.status === "PENDING")
-    .reduce((s, c) => s + c.amountKzt, 0);
-  const paidSum = commissions
-    .filter((c) => c.status === "PAID")
-    .reduce((s, c) => s + c.amountKzt, 0);
 
   return (
     <>
       <SiteHeader />
       <main className="container page-stack">
         <section className="card partner-hero">
-          <p className="eyebrow">Кабинет партнёра</p>
+          <p className="eyebrow">Кабинет клиента</p>
           <h1 className="page-title" style={{ marginTop: "0.35rem" }}>
             Привет, {partner.name}
           </h1>
           <div className="partner-meta">
-            <span className="chip">@{partner.nick}</span>
-            <span
-              className={`badge ${
-                partner.status === "APPROVED"
-                  ? "badge-ok"
-                  : partner.status === "BLOCKED"
-                    ? "badge-bad"
-                    : "badge-warn"
-              }`}
-            >
-              {partner.status}
-            </span>
+            <span className="chip">ID {partner.referralCode}</span>
+            <span className="badge badge-ok">Активен</span>
           </div>
+          <CabinetActions link={`${appUrl}/product/${products[0]?.slug || "panties-postpartum"}?ref=${partner.referralCode}`} />
         </section>
 
-        {partner.status !== "APPROVED" && (
-          <div className="card" style={{ background: "var(--bg-warm)" }}>
-            Страница ещё не активна. После одобрения админом ссылка заработает.
-          </div>
-        )}
+        <section className="stats-grid">
+          {[
+            ["Открытия ссылок", stats.opens],
+            ["Уникальные", stats.uniqueOpens],
+            ["Повторные", stats.repeatOpens],
+            ["Переходы в Kaspi", stats.kaspiClicks],
+            ["Бонусы ₸", partner.bonusBalance],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="card stat-card">
+              <div className="muted" style={{ fontSize: "0.8rem" }}>
+                {label}
+              </div>
+              <div className="stat-value">{value}</div>
+            </div>
+          ))}
+        </section>
 
         <section className="panel">
-          <h2 className="section-title">Мои ссылки</h2>
-          <div className="link-row">
-            <div>
-              <div className="muted" style={{ fontSize: "0.8rem" }}>
-                Общая
-              </div>
-              <Link href={`/p/${partner.nick}`}>
-                <code className="break-all">{link}</code>
-              </Link>
-            </div>
-            <CopyLinkButton value={link} />
-          </div>
-          <CabinetActions link={link} />
+          <h2 className="section-title">Реферальные ссылки на товары</h2>
+          <p className="muted" style={{ marginTop: 0 }}>
+            Скопируйте ссылку и отправьте в WhatsApp / Instagram. Покупка в Kaspi не обязательна для учёта перехода.
+          </p>
           <div className="product-links">
             {products.map((p) => {
-              const url = `${appUrl}/p/${partner.nick}/${p.slug}`;
+              const url = `${appUrl}/product/${p.slug}?ref=${partner.referralCode}`;
               return (
                 <div key={p.id} className="link-row">
                   <div>
@@ -102,64 +87,81 @@ export default async function CabinetPage() {
           </div>
         </section>
 
-        <section className="stats-grid">
-          {[
-            ["Переходы", clicks],
-            ["Лиды", leads],
-            ["Заказы", attributions],
-            ["Комиссия ₸", confirmedSum],
-            ["Ожидает ₸", pendingSum],
-            ["Выплачено ₸", paidSum],
-          ].map(([label, value]) => (
-            <div key={String(label)} className="card stat-card">
-              <div className="muted" style={{ fontSize: "0.8rem" }}>
-                {label}
-              </div>
-              <div className="stat-value">{value}</div>
-            </div>
-          ))}
+        <section className="panel">
+          <h2 className="section-title">По товарам</h2>
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Товар</th>
+                  <th>Открытия</th>
+                  <th>Kaspi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((p) => {
+                  const opens = byProduct
+                    .filter((r) => r.productId === p.id && r.type === "OPEN")
+                    .reduce((s, r) => s + r._count._all, 0);
+                  const kaspi = byProduct
+                    .filter((r) => r.productId === p.id && r.type === "KASPI_CLICK")
+                    .reduce((s, r) => s + r._count._all, 0);
+                  return (
+                    <tr key={p.id}>
+                      <td>{p.name}</td>
+                      <td>{opens}</td>
+                      <td>{kaspi}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </section>
 
-        {commissions.length > 0 && (
-          <section className="panel">
-            <h2 className="section-title">Последние начисления</h2>
+        <section className="panel">
+          <h2 className="section-title">История бонусов</h2>
+          {bonuses.length === 0 ? (
+            <p className="muted">Пока пусто — бонусы начисляет администратор вручную.</p>
+          ) : (
             <div className="table-wrap">
               <table className="table">
                 <thead>
                   <tr>
                     <th>Дата</th>
-                    <th>Заказ</th>
                     <th>Сумма</th>
-                    <th>Статус</th>
+                    <th>Тип</th>
+                    <th>Комментарий</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {commissions.map((c) => (
-                    <tr key={c.id}>
-                      <td>{c.createdAt.toISOString().slice(0, 10)}</td>
+                  {bonuses.map((b) => (
+                    <tr key={b.id}>
+                      <td>{b.createdAt.toISOString().slice(0, 16).replace("T", " ")}</td>
                       <td>
-                        <code>{c.order.code || c.order.kaspiId}</code>
+                        {b.amountKzt > 0 ? "+" : ""}
+                        {b.amountKzt.toLocaleString("ru-KZ")} ₸
                       </td>
-                      <td>{c.amountKzt.toLocaleString("ru-KZ")} ₸</td>
-                      <td>{c.status}</td>
+                      <td>{b.kind}</td>
+                      <td>{b.comment}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </section>
-        )}
+          )}
+        </section>
 
         <section className="panel">
-          <h2 className="section-title">Профиль и реквизиты</h2>
-          <p className="muted" style={{ marginTop: 0, marginBottom: "1rem" }}>
-            Реквизиты нужны до первой выплаты. Покупатели их не видят.
-          </p>
+          <h2 className="section-title">Профиль</h2>
           <ProfileForm
             bio={partner.bio || ""}
             iin={partner.iin || ""}
             payoutRequisites={partner.payoutRequisites || ""}
           />
+          <p className="muted" style={{ marginTop: "1rem" }}>
+            <Link href="/">На главную</Link>
+          </p>
         </section>
       </main>
     </>

@@ -6,8 +6,10 @@ import { AdminLogoutButton } from "./AdminLogoutButton";
 
 const links = [
   { href: "/admin", label: "Дашборд", exact: true },
-  { href: "/admin/partners", label: "Партнёры" },
+  { href: "/admin/clients", label: "Клиенты" },
+  { href: "/admin/analytics", label: "Аналитика" },
   { href: "/admin/products", label: "Каталог" },
+  { href: "/admin/partners", label: "Партнёры" },
   { href: "/admin/orders", label: "Заказы" },
   { href: "/admin/payouts", label: "Выплаты" },
 ];

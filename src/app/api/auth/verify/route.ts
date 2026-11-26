@@ -5,7 +5,8 @@ import { normalizePhone } from "@/lib/phone";
 import { createPartnerSession, safeEqual, verifySmsCode } from "@/lib/auth";
 
 const schema = z.object({
-  phone: z.string().min(10),
+  phone: z.string().min(10).optional(),
+  email: z.string().email().optional(),
   code: z.string().min(4),
 });
 
@@ -16,18 +17,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
 
-  const phone = normalizePhone(parsed.data.phone);
-  if (!phone) {
-    return NextResponse.json({ error: "invalid_phone" }, { status: 400 });
+  const phone = parsed.data.phone ? normalizePhone(parsed.data.phone) : null;
+  const email = parsed.data.email?.trim().toLowerCase() || null;
+
+  if (!phone && !email) {
+    return NextResponse.json({ error: "phone_or_email_required" }, { status: 400 });
   }
 
-  const partner = await prisma.partner.findUnique({ where: { phone } });
+  const partner = await prisma.partner.findFirst({
+    where: phone ? { phone } : { email: email! },
+  });
   if (!partner) {
-    return NextResponse.json({ error: "partner_not_found" }, { status: 404 });
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
   const latest = await prisma.authCode.findFirst({
-    where: { phone, usedAt: null, expiresAt: { gt: new Date() } },
+    where: {
+      usedAt: null,
+      expiresAt: { gt: new Date() },
+      ...(phone ? { phone } : { email: email! }),
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -46,13 +55,20 @@ export async function POST(req: Request) {
     });
   }
 
+  if (email && !partner.emailVerifiedAt) {
+    await prisma.partner.update({
+      where: { id: partner.id },
+      data: { emailVerifiedAt: new Date() },
+    });
+  }
+
   await createPartnerSession(partner.id);
 
   return NextResponse.json({
     ok: true,
-    partner: {
+    client: {
       id: partner.id,
-      nick: partner.nick,
+      referralCode: partner.referralCode,
       name: partner.name,
       status: partner.status,
     },

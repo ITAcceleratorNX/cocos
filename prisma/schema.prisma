@@ -52,18 +52,34 @@ model AdminUser {
   createdAt    DateTime @default(now())
 }
 
+enum ReferralEventType {
+  OPEN
+  KASPI_CLICK
+}
+
+enum BonusKind {
+  CREDIT
+  PAYOUT
+  CORRECTION
+}
+
 model Partner {
   id               String        @id @default(cuid())
   name             String
   phone            String        @unique
+  email            String?       @unique
+  emailVerifiedAt  DateTime?
   city             String?
   nick             String        @unique
+  /// Public referral id in links, e.g. COCO001
+  referralCode     String        @unique
   instagram        String?
   tiktok           String?
   bio              String?
   photoUrl         String?
-  status           PartnerStatus @default(PENDING)
+  status           PartnerStatus @default(APPROVED)
   commissionRate   Decimal       @default(15) @db.Decimal(5, 2)
+  bonusBalance     Int           @default(0)
   iin              String?
   payoutRequisites String?
   agreedAt         DateTime?
@@ -71,12 +87,14 @@ model Partner {
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
-  clicks       Click[]
-  leads        Lead[]
-  attributions Attribution[]
-  commissions  Commission[]
-  authCodes    AuthCode[]
-  sessions     Session[]
+  clicks         Click[]
+  leads          Lead[]
+  attributions   Attribution[]
+  commissions    Commission[]
+  authCodes      AuthCode[]
+  sessions       Session[]
+  referralEvents ReferralEvent[]
+  bonusLedger    BonusLedger[]
 }
 
 model Product {
@@ -93,9 +111,47 @@ model Product {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  clicks Click[]
-  leads  Lead[]
-  orderItems KaspiOrderItem[]
+  clicks         Click[]
+  leads          Lead[]
+  orderItems     KaspiOrderItem[]
+  referralEvents ReferralEvent[]
+}
+
+model ReferralEvent {
+  id        String            @id @default(cuid())
+  partnerId String
+  productId String?
+  type      ReferralEventType
+  visitorId String
+  isUnique  Boolean           @default(false)
+  userAgent String?
+  referer   String?
+  source    String?
+  ipHash    String?
+  createdAt DateTime          @default(now())
+
+  partner Partner  @relation(fields: [partnerId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@index([partnerId, type, createdAt])
+  @@index([partnerId, visitorId, type])
+  @@index([productId, createdAt])
+  @@index([createdAt])
+}
+
+model BonusLedger {
+  id             String    @id @default(cuid())
+  partnerId      String
+  amountKzt      Int
+  kind           BonusKind
+  comment        String
+  adminActor     String
+  idempotencyKey String?   @unique
+  createdAt      DateTime  @default(now())
+
+  partner Partner @relation(fields: [partnerId], references: [id])
+
+  @@index([partnerId, createdAt])
 }
 
 model Click {
@@ -207,7 +263,8 @@ model Commission {
 model AuthCode {
   id        String   @id @default(cuid())
   partnerId String?
-  phone     String
+  phone     String   @default("")
+  email     String?
   code      String
   expiresAt DateTime
   usedAt    DateTime?
@@ -216,6 +273,7 @@ model AuthCode {
   partner Partner? @relation(fields: [partnerId], references: [id])
 
   @@index([phone, createdAt])
+  @@index([email, createdAt])
 }
 
 model Session {

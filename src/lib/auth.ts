@@ -93,11 +93,23 @@ export function verifySmsCode(code: string) {
   return false;
 }
 
-export async function issueAuthCode(phone: string, partnerId?: string) {
-  const code = isMockSms() ? getMockSmsCode() : String(Math.floor(100000 + Math.random() * 900000));
+export async function issueAuthCode(params: {
+  phone?: string;
+  email?: string;
+  partnerId?: string;
+}) {
+  const code = isMockSms()
+    ? getMockSmsCode()
+    : String(Math.floor(100000 + Math.random() * 900000));
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
   await prisma.authCode.create({
-    data: { phone, code, expiresAt, partnerId },
+    data: {
+      phone: params.phone || "",
+      email: params.email || null,
+      code,
+      expiresAt,
+      partnerId: params.partnerId,
+    },
   });
-  return { code: isMockSms() ? code : undefined, expiresAt };
+  return { code, expiresAt, displayCode: isMockSms() ? code : undefined };
 }

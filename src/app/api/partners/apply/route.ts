@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { normalizePhone } from "@/lib/phone";
 import { getDefaultCommissionRate } from "@/lib/settings";
+import { nextReferralCode } from "@/lib/referral";
 
 const schema = z.object({
   name: z.string().min(2).max(80),
@@ -12,7 +13,9 @@ const schema = z.object({
     .string()
     .min(3)
     .max(32)
-    .regex(/^[a-z0-9_]+$/i, "nick_latin"),
+    .regex(/^[a-z0-9_]+$/i, "nick_latin")
+    .optional(),
+  email: z.string().email().optional(),
   instagram: z.string().max(120).optional(),
   tiktok: z.string().max(120).optional(),
   consent: z.literal(true),
@@ -33,34 +36,57 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_phone" }, { status: 400 });
   }
 
-  const nick = parsed.data.nick.toLowerCase();
+  const email = parsed.data.email?.trim().toLowerCase();
+  const nick =
+    parsed.data.nick?.toLowerCase() ||
+    `c${phone.slice(-8)}`;
 
   const existing = await prisma.partner.findFirst({
-    where: { OR: [{ phone }, { nick }] },
+    where: {
+      OR: [{ phone }, { nick }, ...(email ? [{ email }] : [])],
+    },
   });
   if (existing) {
-    return NextResponse.json(
-      { error: existing.phone === phone ? "phone_taken" : "nick_taken" },
-      { status: 409 },
-    );
+    const error =
+      existing.phone === phone
+        ? "phone_taken"
+        : existing.email === email
+          ? "email_taken"
+          : "nick_taken";
+    return NextResponse.json({ error }, { status: 409 });
   }
+
+  const referralCode = await nextReferralCode();
 
   const partner = await prisma.partner.create({
     data: {
       name: parsed.data.name.trim(),
       phone,
+      email,
       city: parsed.data.city?.trim(),
       nick,
+      referralCode,
       instagram: parsed.data.instagram?.trim(),
       tiktok: parsed.data.tiktok?.trim(),
-      status: "PENDING",
+      status: "APPROVED",
       commissionRate: getDefaultCommissionRate(),
       agreedAt: new Date(),
+      approvedAt: new Date(),
     },
   });
 
   return NextResponse.json({
     ok: true,
-    partner: { id: partner.id, nick: partner.nick, status: partner.status },
+    partner: {
+      id: partner.id,
+      nick: partner.nick,
+      referralCode: partner.referralCode,
+      status: partner.status,
+    },
+    client: {
+      id: partner.id,
+      referralCode: partner.referralCode,
+      name: partner.name,
+    },
   });
 }

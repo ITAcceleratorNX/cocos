@@ -10,12 +10,11 @@ export default function PartnerApplyPage() {
     phone: "",
     city: "Алматы",
     nick: "",
-    instagram: "",
-    tiktok: "",
+    email: "",
     consent: true,
   });
   const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState<{ nick: string } | null>(null);
+  const [done, setDone] = useState<{ referralCode: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -40,19 +39,24 @@ export default function PartnerApplyPage() {
       const res = await fetch("/api/partners/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          nick: form.nick || undefined,
+          email: form.email || undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
         const map: Record<string, string> = {
           phone_taken: "Этот телефон уже зарегистрирован",
+          email_taken: "Этот email уже зарегистрирован",
           nick_taken: "Ник занят — выберите другой",
           invalid_phone: "Проверьте номер телефона",
           validation: "Проверьте поля формы",
         };
         throw new Error(map[data.error] || data.error || "Ошибка");
       }
-      setDone({ nick: data.partner.nick });
+      setDone({ referralCode: data.partner.referralCode });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка");
     } finally {
@@ -65,19 +69,19 @@ export default function PartnerApplyPage() {
       <SiteHeader />
       <main className="container apply-layout">
         <section className="apply-copy">
-          <p className="eyebrow">Партнёрская программа</p>
-          <h1 className="page-title">Рекомендуй CoCo’s — получай % с покупок на Kaspi</h1>
+          <p className="eyebrow">Реферальная программа</p>
+          <h1 className="page-title">Рекомендуй CoCo’s и получай бонусы</h1>
           <p className="muted" style={{ margin: "0.75rem 0 0", maxWidth: 480, fontSize: "1.02rem" }}>
-            Личная ссылка для Instagram и TikTok. Покупатель оформляет заказ в Kaspi — ты получаешь
-            комиссию после выдачи.
+            Персональные ссылки на товары, учёт открытий и переходов в Kaspi. Бонусы начисляет
+            администратор вручную.
           </p>
 
           <div className="apply-steps">
             {[
-              ["1", "Заявка", "Имя, телефон и ник твоей страницы"],
-              ["2", "Одобрение", "Менеджер активирует ссылку"],
-              ["3", "Трафик", "Сторис → твоя страница → Kaspi"],
-              ["4", "Комиссия", "Только за выданные заказы"],
+              ["1", "Регистрация", "Имя и телефон — кабинет сразу доступен"],
+              ["2", "Ссылки", "Скопируйте ссылку на любой товар"],
+              ["3", "Трафик", "Друг открыл товар → перешёл в Kaspi"],
+              ["4", "Бонусы", "Админ начисляет по результатам"],
             ].map(([n, t, d]) => (
               <div key={n} className="apply-step">
                 <div className="apply-step__n">{n}</div>
@@ -93,10 +97,8 @@ export default function PartnerApplyPage() {
         <section>
           <form onSubmit={onSubmit} className="panel form-stack">
             <div>
-              <h2 className="panel-title">Оставьте заявку</h2>
-              <p className="panel-subtitle">
-                После одобрения получите личную ссылку и доступ в кабинет партнёра
-              </p>
+              <h2 className="panel-title">Регистрация клиента</h2>
+              <p className="panel-subtitle">После регистрации войдите в кабинет по SMS-коду</p>
             </div>
 
             <div className="form-field">
@@ -104,7 +106,6 @@ export default function PartnerApplyPage() {
               <input
                 id="name"
                 className="input"
-                placeholder="Как вас зовут?"
                 required
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -112,16 +113,26 @@ export default function PartnerApplyPage() {
             </div>
 
             <div className="form-field">
-              <label htmlFor="phone">Ваш телефон</label>
+              <label htmlFor="phone">Телефон</label>
               <input
                 id="phone"
                 className="input"
                 type="tel"
-                inputMode="tel"
-                placeholder="+7 (700) 000-00-00"
                 required
+                placeholder="+7 (700) 000-00-00"
                 value={form.phone}
                 onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+              />
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="email">Email (если SMS недоступен)</label>
+              <input
+                id="email"
+                className="input"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
               />
             </div>
 
@@ -130,51 +141,19 @@ export default function PartnerApplyPage() {
               <input
                 id="city"
                 className="input"
-                placeholder="Алматы"
                 value={form.city}
                 onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
               />
             </div>
 
             <div className="form-field">
-              <label htmlFor="nick">Ник страницы</label>
+              <label htmlFor="nick">Ник (необязательно)</label>
               <input
                 id="nick"
                 className="input"
-                placeholder="aigerim"
-                required
+                placeholder="латиницей"
                 value={form.nick}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    nick: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""),
-                  }))
-                }
-              />
-              <span className="muted" style={{ fontSize: "0.78rem" }}>
-                Будет ссылка /p/{form.nick || "ваш-ник"}
-              </span>
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="instagram">Instagram</label>
-              <input
-                id="instagram"
-                className="input"
-                placeholder="@username"
-                value={form.instagram}
-                onChange={(e) => setForm((f) => ({ ...f, instagram: e.target.value }))}
-              />
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="tiktok">TikTok</label>
-              <input
-                id="tiktok"
-                className="input"
-                placeholder="@username"
-                value={form.tiktok}
-                onChange={(e) => setForm((f) => ({ ...f, tiktok: e.target.value }))}
+                onChange={(e) => setForm((f) => ({ ...f, nick: e.target.value }))}
               />
             </div>
 
@@ -186,22 +165,26 @@ export default function PartnerApplyPage() {
                 required
               />
               <span>
-                Согласна с{" "}
-                <Link href="/offer" style={{ textDecoration: "underline" }}>
-                  условиями программы
+                Согласен с{" "}
+                <Link href="/offer" target="_blank">
+                  офертой
                 </Link>{" "}
                 и{" "}
-                <Link href="/privacy" style={{ textDecoration: "underline" }}>
-                  обработкой персональных данных
+                <Link href="/privacy" target="_blank">
+                  политикой
                 </Link>
               </span>
             </label>
 
             {error && <p className="form-error">{error}</p>}
 
-            <button className="btn btn-primary btn-block" disabled={loading || !form.consent}>
-              {loading ? "Отправляем…" : "Отправить заявку"}
+            <button type="submit" className="btn btn-primary btn-block" disabled={loading || !form.consent}>
+              {loading ? "Отправляем…" : "Зарегистрироваться"}
             </button>
+
+            <p className="muted" style={{ margin: 0, fontSize: "0.85rem", textAlign: "center" }}>
+              Уже есть аккаунт? <Link href="/cabinet/login">Войти</Link>
+            </p>
           </form>
         </section>
       </main>
@@ -210,37 +193,28 @@ export default function PartnerApplyPage() {
         <div
           className="modal-backdrop"
           role="presentation"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setDone(null);
-          }}
+          onClick={() => setDone(null)}
         >
           <div
-            className="modal-card success-panel"
+            className="modal-card panel"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="apply-success-title"
+            onClick={(e) => e.stopPropagation()}
           >
-            <button
-              type="button"
-              className="modal-close"
-              aria-label="Закрыть"
-              onClick={() => setDone(null)}
-            >
-              ×
-            </button>
-            <div className="success-panel__icon" aria-hidden>
-              ✓
-            </div>
-            <h2 id="apply-success-title" className="panel-title">
-              Заявка отправлена
-            </h2>
-            <p className="panel-subtitle" style={{ marginBottom: "1.25rem" }}>
-              Ник <strong>{done.nick}</strong> зарезервирован. После одобрения страница будет{" "}
-              <code>/p/{done.nick}</code>
+            <p className="eyebrow">Готово</p>
+            <h2 className="panel-title">Ваш реферальный ID</h2>
+            <p className="panel-subtitle">
+              <code style={{ fontSize: "1.25rem" }}>{done.referralCode}</code>
             </p>
-            <Link href="/cabinet/login" className="btn btn-primary btn-block">
-              Войти в кабинет
-            </Link>
+            <p className="muted">Войдите в кабинет, чтобы копировать ссылки на товары.</p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+              <Link href="/cabinet/login" className="btn btn-primary">
+                Войти в кабинет
+              </Link>
+              <button type="button" className="btn btn-ghost" onClick={() => setDone(null)}>
+                Закрыть
+              </button>
+            </div>
           </div>
         </div>
       )}
