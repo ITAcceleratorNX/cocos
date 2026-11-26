@@ -1,6 +1,10 @@
-import { redirect } from "next/navigation";
-
-/** App Router owns `/`, so next.config rewrite to static HTML is ignored — redirect instead. */
-export default function Home() {
-  redirect("/landing/index.html");
+/** Served via middleware rewrite to /landing/index.html. Fallback if rewrite misses. */
+export default function HomeFallback() {
+  return (
+    <main style={{ padding: "2rem", fontFamily: "system-ui" }}>
+      <p>
+        <a href="/landing/index.html">Открыть витрину CoCo’s</a>
+      </p>
+    </main>
+  );
 }

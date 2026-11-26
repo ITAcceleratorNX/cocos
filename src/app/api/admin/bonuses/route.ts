@@ -22,16 +22,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "validation" }, { status: 400 });
   }
 
-  let amount = parsed.data.amountKzt;
-  if (parsed.data.kind === "CORRECTION") {
-    // correction amount can be signed via negative in comment flow — accept as positive with kind
-    // For correction reducing balance, client should send kind CORRECTION with negative? 
-    // Keep CREDIT positive; CORRECTION allows signed via separate field — use amount as signed for CORRECTION
-  }
+  const amount = parsed.data.amountKzt;
 
   try {
-    // For CORRECTION allow reducing: pass signed via kind PAYOUT or negative amount in future.
-    // MVP: CREDIT = +amount, PAYOUT = -amount, CORRECTION = +amount with note (use PAYOUT to decrease).
+    // MVP: CREDIT/CORRECTION = +amount, PAYOUT = -amount (use PAYOUT to decrease balance).
     const result = await applyBonus({
       partnerId: parsed.data.partnerId,
       amountKzt:
