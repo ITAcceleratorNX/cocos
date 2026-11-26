@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
+import { PhoneInput } from "@/components/PhoneInput";
 
 export default function CabinetLoginPage() {
   const router = useRouter();
@@ -103,12 +104,11 @@ export default function CabinetLoginPage() {
                 {mode === "phone" ? (
                   <div className="form-field">
                     <label htmlFor="phone">Телефон</label>
-                    <input
+                    <PhoneInput
                       id="phone"
-                      className="input"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+7 (700) 000-00-00"
+                      onChange={setPhone}
+                      placeholder="+77001234567"
                       required
                     />
                   </div>

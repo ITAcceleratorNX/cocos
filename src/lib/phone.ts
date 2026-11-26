@@ -1,3 +1,13 @@
+/** Keep only digits; allow a single leading +. */
+export function sanitizePhoneInput(input: string): string {
+  const raw = input.replace(/[^\d+]/g, "");
+  if (!raw) return "";
+  if (raw.startsWith("+")) {
+    return `+${raw.slice(1).replace(/\D/g, "").slice(0, 15)}`;
+  }
+  return raw.replace(/\D/g, "").slice(0, 15);
+}
+
 /** Normalize KZ phones to digits starting with 7XXXXXXXXXX */
 export function normalizePhone(input: string): string | null {
   const digits = input.replace(/\D/g, "");

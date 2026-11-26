@@ -63,11 +63,31 @@ npm run db:seed
 - `https://<app>.vercel.app/api/health`
 - `/p/aigerim`, `/cabinet/login`, `/admin/login`
 
-### 6. Домен cocos.kz (когда будет DNS)
+### 6. Домен cocos.kz (PS.kz → Vercel)
 
-В Vercel → Project → Settings → Domains → добавить `cocos.kz` и `www`.  
-В PS.kz DNS: CNAME `www` → `cname.vercel-dns.com`, для корня — A/ALIAS по подсказке Vercel.  
-Обновить `NEXT_PUBLIC_APP_URL=https://cocos.kz`.
+Проект сейчас: `https://cocos-nu.vercel.app`
+
+**A. Vercel**
+
+1. Project **cocos** → **Settings → Domains**
+2. Add: `cocos.kz` и `www.cocos.kz`
+3. Primary: `cocos.kz` (www → redirect на корень)
+
+**B. DNS в PS.kz** (зона `cocos.kz`, NS уже `ns1/ns2/ns3.ps.kz`)
+
+| Тип | Имя / Host | Значение |
+|-----|------------|----------|
+| **A** | `@` (или пусто / cocos.kz) | `76.76.21.21` |
+| **CNAME** | `www` | `cname.vercel-dns.com` |
+
+Если Vercel покажет другие IP/значения в Domains — ставьте **их**.  
+Удалите старые конфликтующие A/CNAME на `@` и `www`.
+
+**C. Env на Vercel**
+
+`NEXT_PUBLIC_APP_URL` = `https://cocos.kz` → Save → **Redeploy** Production.
+
+Проверка: `https://cocos.kz` и `https://www.cocos.kz` (SSL выпустит Vercel сам, 5–30 мин после DNS).
 
 ### 7. Cron Kaspi
 

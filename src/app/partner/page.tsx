@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
+import { PhoneInput } from "@/components/PhoneInput";
 
 export default function PartnerApplyPage() {
   const [form, setForm] = useState({
@@ -114,14 +115,12 @@ export default function PartnerApplyPage() {
 
             <div className="form-field">
               <label htmlFor="phone">Телефон</label>
-              <input
+              <PhoneInput
                 id="phone"
-                className="input"
-                type="tel"
                 required
-                placeholder="+7 (700) 000-00-00"
+                placeholder="+77001234567"
                 value={form.phone}
-                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                onChange={(phone) => setForm((f) => ({ ...f, phone }))}
               />
             </div>
 

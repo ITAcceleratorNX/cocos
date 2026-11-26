@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PhoneInput } from "@/components/PhoneInput";
 
 type Props = {
   partnerNick: string;
@@ -68,13 +69,11 @@ export function PhoneLeadForm({ partnerNick, productSlug, kaspiUrl, goPath }: Pr
 
       <div className="form-field">
         <label htmlFor="lead-phone">Ваш телефон</label>
-        <input
+        <PhoneInput
           id="lead-phone"
-          className="input"
-          inputMode="tel"
-          placeholder="+7 (700) 000-00-00"
+          placeholder="+77001234567"
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
+          onChange={setPhone}
           required
         />
       </div>

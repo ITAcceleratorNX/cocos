@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { PhoneInput } from "@/components/PhoneInput";
 
 export function ManualOrderForm({
   products,
@@ -73,11 +74,11 @@ export function ManualOrderForm({
         </div>
         <div className="form-field">
           <label htmlFor="customerPhone">Телефон покупателя</label>
-          <input
+          <PhoneInput
             id="customerPhone"
-            className="input"
+            placeholder="+77001234567"
             value={form.customerPhone}
-            onChange={(e) => setForm({ ...form, customerPhone: e.target.value })}
+            onChange={(customerPhone) => setForm({ ...form, customerPhone })}
           />
         </div>
         <div className="form-field">

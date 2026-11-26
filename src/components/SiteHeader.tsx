@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { useState } from "react";
 
-export function SiteHeader({ compact = false }: { compact?: boolean }) {
+export function SiteHeader({
+  compact = false,
+  authed = false,
+}: {
+  compact?: boolean;
+  authed?: boolean;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -19,11 +25,18 @@ export function SiteHeader({ compact = false }: { compact?: boolean }) {
 
         <nav className="header-nav desktop-nav" aria-label="Навигация">
           <Link href="/#catalog">Каталог</Link>
-          <Link href="/partner">Регистрация</Link>
-          <Link href="/cabinet/login">Войти</Link>
-          <Link href="/cabinet" className="btn btn-primary btn-sm">
-            Кабинет
-          </Link>
+          {authed ? (
+            <Link href="/cabinet" className="btn btn-primary btn-sm">
+              Кабинет
+            </Link>
+          ) : (
+            <>
+              <Link href="/cabinet/login">Войти</Link>
+              <Link href="/partner" className="btn btn-primary btn-sm">
+                Регистрация
+              </Link>
+            </>
+          )}
         </nav>
 
         <button
@@ -44,20 +57,30 @@ export function SiteHeader({ compact = false }: { compact?: boolean }) {
           <Link href="/#catalog" onClick={() => setOpen(false)}>
             Каталог
           </Link>
-          <Link href="/partner" onClick={() => setOpen(false)}>
-            Регистрация
-          </Link>
-          <Link href="/cabinet/login" onClick={() => setOpen(false)}>
-            Войти
-          </Link>
-          <Link
-            href="/cabinet"
-            className="btn btn-primary btn-block"
-            style={{ marginTop: 8 }}
-            onClick={() => setOpen(false)}
-          >
-            Кабинет
-          </Link>
+          {authed ? (
+            <Link
+              href="/cabinet"
+              className="btn btn-primary btn-block"
+              style={{ marginTop: 8 }}
+              onClick={() => setOpen(false)}
+            >
+              Кабинет
+            </Link>
+          ) : (
+            <>
+              <Link href="/cabinet/login" onClick={() => setOpen(false)}>
+                Войти
+              </Link>
+              <Link
+                href="/partner"
+                className="btn btn-primary btn-block"
+                style={{ marginTop: 8 }}
+                onClick={() => setOpen(false)}
+              >
+                Регистрация
+              </Link>
+            </>
+          )}
         </nav>
       )}
     </header>
