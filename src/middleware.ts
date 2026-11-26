@@ -1,12 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export function middleware(req: NextRequest) {
-  if (req.nextUrl.pathname === "/") {
-    return NextResponse.rewrite(new URL("/landing/index.html", req.url));
-  }
+/** Reserved for auth/geo later. Home rewrite lives in next.config.ts */
+export function middleware() {
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/"],
+  matcher: ["/admin/:path*", "/cabinet/:path*"],
 };

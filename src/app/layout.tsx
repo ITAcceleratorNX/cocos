@@ -9,8 +9,17 @@ const onest = Onest({
   weight: ["300", "400", "500", "600", "700"],
 });
 
+function appOrigin() {
+  const raw = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  try {
+    return new URL(raw || "https://cocos.kz");
+  } catch {
+    return new URL("https://cocos.kz");
+  }
+}
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://cocos.kz"),
+  metadataBase: appOrigin(),
   title: {
     default: "CoCo’s — партнёрская программа",
     template: "%s · CoCo’s",
