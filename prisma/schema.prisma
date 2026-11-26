@@ -1,0 +1,249 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Neon/Vercel: pooled URL in DATABASE_URL, non-pooled in DIRECT_URL (migrations)
+  directUrl = env("DIRECT_URL")
+}
+
+enum PartnerStatus {
+  PENDING
+  APPROVED
+  BLOCKED
+}
+
+enum AttributionMethod {
+  PHONE
+  TIME_WINDOW
+  KASPI_REPORT
+  MANUAL
+}
+
+enum AttributionConfidence {
+  HIGH
+  PROBABLE
+  LOW
+}
+
+enum CommissionStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  PAID
+}
+
+enum KaspiOrderStatus {
+  APPROVED_BY_BANK
+  ACCEPTED_BY_MERCHANT
+  COMPLETED
+  CANCELLED
+  RETURNED
+  OTHER
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+}
+
+model Partner {
+  id               String        @id @default(cuid())
+  name             String
+  phone            String        @unique
+  city             String?
+  nick             String        @unique
+  instagram        String?
+  tiktok           String?
+  bio              String?
+  photoUrl         String?
+  status           PartnerStatus @default(PENDING)
+  commissionRate   Decimal       @default(15) @db.Decimal(5, 2)
+  iin              String?
+  payoutRequisites String?
+  agreedAt         DateTime?
+  approvedAt       DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  clicks       Click[]
+  leads        Lead[]
+  attributions Attribution[]
+  commissions  Commission[]
+  authCodes    AuthCode[]
+  sessions     Session[]
+}
+
+model Product {
+  id         String   @id @default(cuid())
+  name       String
+  slug       String   @unique
+  sku        String?  @unique
+  kaspiUrl   String
+  priceKzt   Int
+  imageUrl   String?
+  description String?
+  active     Boolean  @default(true)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  clicks Click[]
+  leads  Lead[]
+  orderItems KaspiOrderItem[]
+}
+
+model Click {
+  id         String   @id @default(cuid())
+  partnerId  String
+  productId  String?
+  cookieId   String
+  userAgent  String?
+  referer    String?
+  ipHash     String?
+  source     String?
+  createdAt  DateTime @default(now())
+
+  partner Partner  @relation(fields: [partnerId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@index([partnerId, createdAt])
+  @@index([cookieId, createdAt])
+  @@index([productId, createdAt])
+}
+
+model Lead {
+  id         String   @id @default(cuid())
+  partnerId  String
+  productId  String?
+  phone      String
+  cookieId   String?
+  consent    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  partner Partner  @relation(fields: [partnerId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@index([phone, createdAt])
+  @@index([partnerId, createdAt])
+}
+
+model KaspiOrder {
+  id              String           @id @default(cuid())
+  kaspiId         String           @unique
+  code            String?
+  status          KaspiOrderStatus @default(OTHER)
+  statusRaw       String?
+  totalPrice      Int
+  customerPhone   String?
+  customerName    String?
+  orderedAt       DateTime
+  completedAt     DateTime?
+  rawJson         Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  items        KaspiOrderItem[]
+  attribution  Attribution?
+  commission   Commission?
+
+  @@index([customerPhone, orderedAt])
+  @@index([status, orderedAt])
+}
+
+model KaspiOrderItem {
+  id           String @id @default(cuid())
+  orderId      String
+  productId    String?
+  kaspiSku     String?
+  name         String?
+  quantity     Int    @default(1)
+  unitPrice    Int?
+
+  order   KaspiOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product?   @relation(fields: [productId], references: [id])
+}
+
+model Attribution {
+  id          String                @id @default(cuid())
+  orderId     String                @unique
+  partnerId   String
+  method      AttributionMethod
+  confidence  AttributionConfidence @default(HIGH)
+  note        String?
+  confirmedBy String?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  order   KaspiOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  partner Partner    @relation(fields: [partnerId], references: [id])
+
+  @@index([partnerId])
+}
+
+model Commission {
+  id          String           @id @default(cuid())
+  orderId     String           @unique
+  partnerId   String
+  rate        Decimal          @db.Decimal(5, 2)
+  amountKzt   Int
+  status      CommissionStatus @default(PENDING)
+  paidAt      DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  order   KaspiOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  partner Partner    @relation(fields: [partnerId], references: [id])
+
+  @@index([partnerId, status])
+  @@index([status, createdAt])
+}
+
+model AuthCode {
+  id        String   @id @default(cuid())
+  partnerId String?
+  phone     String
+  code      String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  partner Partner? @relation(fields: [partnerId], references: [id])
+
+  @@index([phone, createdAt])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  partnerId String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  partner Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@index([partnerId])
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actor     String
+  action    String
+  entity    String?
+  entityId  String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

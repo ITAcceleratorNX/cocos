@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CoCo’s Partner (MVP)
 
-## Getting Started
+Партнёрская программа для бренда CoCo’s: личные ссылки → трафик из Instagram/TikTok → покупки в Kaspi → учёт комиссии.
 
-First, run the development server:
+Стек: **Next.js 15 + TypeScript + Postgres (Prisma)**.
+
+## Что уже есть (Этап 1)
+
+| Зона | Готово |
+|------|--------|
+| `/` | Витрина из `cocos-landing` |
+| `/partner` | Заявка партнёра |
+| `/p/{nick}`, `/p/{nick}/{product}` | Страницы партнёра + клик + cookie 30 дней |
+| `/go/{nick}/{product}` | Редирект в Kaspi с записью клика |
+| Форма телефона → Lead | Перед уходом в Kaspi |
+| `/cabinet` | Вход, ссылки, QR, статистика, реквизиты + bio |
+| `/admin` | Партнёры (ставка), **CRUD каталога**, заказы, статус, Excel, «выплачено» |
+| Kaspi probe | `npm run kaspi:probe` (когда дадут токен) |
+| Модель данных | Partner, Product, Click, Lead, KaspiOrder, Attribution, Commission |
+
+## Быстрый старт (локально)
 
 ```bash
+# 1. Postgres
+docker compose up -d   # Postgres на порту 5433
+
+# 2. Env
+cp .env.example .env
+
+# 3. Миграции + seed
+npm install
+npx prisma migrate dev --name init
+npm run db:seed
+
+# 4. Dev-сервер
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Прод сейчас через **Vercel + Neon**: см. [DEPLOY.md](./DEPLOY.md).  
+Блокеры для ПМ: [docs/PM-BLOCKERS.md](./docs/PM-BLOCKERS.md).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Открыть:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Сайт: http://localhost:3000  
+- Demo партнёр: http://localhost:3000/p/aigerim  
+- Кабинет: http://localhost:3000/cabinet/login (телефон `77001112233`, код `000000`)  
+- Админка: http://localhost:3000/admin/login (`admin@cocos.kz` / `cocos-admin`)
 
-## Learn More
+## Критерий MVP (чек)
 
-To learn more about Next.js, take a look at the following resources:
+1. Партнёр регистрируется на `/partner`
+2. Админ одобряет в `/admin/partners`
+3. Ссылка `/p/{nick}` работает, клик пишется
+4. Лид с телефоном сохраняется
+5. Заказ Kaspi вводится вручную в `/admin/orders` и привязывается
+6. Excel: `/admin/payouts` → «Скачать Excel»
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Этапы
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Этап 0** (до 27.11.2026) — токен Kaspi API, тест `customer.cellPhone`, 6 вопросов Kaspi  
+- **Этап 1** (до 11.12.2026) — этот MVP  
+- **Этап 2** (до 15.01.2027) — cron заказов раз в час, автопривязка, кабинет статистики  
+- **Этап 3** (до 29.01.2027) — конкурсы, материалы, KZ, дашборд  
 
-## Deploy on Vercel
+Старт партнёров в клинике «Рахат»: **5 декабря 2026**.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Важно
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Своей корзины/оплаты/доставки нет — всё в Kaspi.
+- Переход ≠ покупка. Комиссия только после `COMPLETED`.
+- `KASPI_API_TOKEN` — только server env, никогда в клиент.
+- Ставка комиссии по умолчанию `15%` (пока не утвердил заказчик).
+
+## Структура
+
+```text
+public/landing/     # готовый static лендинг
+prisma/             # schema + seed
+src/app/            # роуты Next.js
+src/lib/            # prisma, auth, attribution, commission
+```
