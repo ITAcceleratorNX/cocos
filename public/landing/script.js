@@ -22,6 +22,42 @@
     });
   }
 
+  /* Account dropdown in navbar */
+  const accountDropdown = document.getElementById('account-dropdown');
+  const accountBtn = document.getElementById('account-dropdown-btn');
+  const accountMenu = document.getElementById('account-dropdown-menu');
+
+  if (accountDropdown && accountBtn && accountMenu) {
+    function closeAccountMenu() {
+      accountDropdown.classList.remove('is-open');
+      accountBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    function openAccountMenu() {
+      accountDropdown.classList.add('is-open');
+      accountBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    accountBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (accountDropdown.classList.contains('is-open')) closeAccountMenu();
+      else openAccountMenu();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!accountDropdown.contains(e.target)) closeAccountMenu();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeAccountMenu();
+    });
+
+    accountMenu.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => closeAccountMenu());
+    });
+  }
+
   /* --------------------------------------------------------------------------
      2. Catalog Filter Pills
      -------------------------------------------------------------------------- */

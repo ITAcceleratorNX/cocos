@@ -422,6 +422,69 @@ textarea {
   color: var(--brand-gold);
 }
 
+.header-account {
+  position: relative;
+}
+
+.header-account__trigger {
+  gap: 0.35rem;
+}
+
+.header-account__trigger svg {
+  display: block;
+  transition: transform 0.15s ease;
+}
+
+.header-account__trigger[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.header-account__menu {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  right: 0;
+  min-width: 168px;
+  padding: 0.4rem;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid rgba(39, 39, 39, 0.08);
+  box-shadow: var(--shadow-lift);
+  z-index: 50;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.header-account__menu a {
+  display: block;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.header-account__menu a:hover {
+  background: #f6f3ec;
+  color: var(--brand-gold-dark);
+}
+
+.mobile-account {
+  margin-top: 0.35rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--border-subtle);
+  display: grid;
+  gap: 0.35rem;
+}
+
+.mobile-account__label {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
 .burger {
   display: none;
   width: 42px;

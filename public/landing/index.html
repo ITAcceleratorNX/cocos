@@ -31,8 +31,24 @@
       </nav>
 
       <div class="header-actions">
-        <a href="/cabinet/login" class="btn btn--ghost btn--sm">Войти</a>
-        <a href="/partner" class="btn btn--ghost btn--sm">Регистрация</a>
+        <div class="account-dropdown" id="account-dropdown">
+          <button
+            type="button"
+            class="btn btn--ghost btn--sm account-dropdown__trigger"
+            id="account-dropdown-btn"
+            aria-expanded="false"
+            aria-haspopup="menu"
+          >
+            Регистрация
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="account-dropdown__menu" id="account-dropdown-menu" role="menu">
+            <a href="/cabinet/login" role="menuitem">Войти</a>
+            <a href="/partner" role="menuitem">Регистрация</a>
+          </div>
+        </div>
         <button type="button" class="btn btn--ghost btn--sm" data-partner-link="1" hidden>
           Стать партнёром
         </button>
@@ -68,6 +84,7 @@
       <a href="#faq">Частые вопросы</a>
       <a href="#where-to-buy">Где купить</a>
       <div class="mobile-nav__actions">
+        <p class="mobile-nav__account-label">Аккаунт</p>
         <a href="/cabinet/login" class="btn btn--ghost">Войти</a>
         <a href="/partner" class="btn btn--ghost">Регистрация</a>
         <button type="button" class="btn btn--ghost" data-partner-link="1" hidden>Стать партнёром</button>

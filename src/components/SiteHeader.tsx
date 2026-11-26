@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function SiteHeader({
   compact = false,
@@ -11,11 +11,37 @@ export function SiteHeader({
   authed?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!accountRef.current?.contains(e.target as Node)) {
+        setAccountOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setAccountOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, []);
 
   return (
     <header className="site-header" data-compact={compact || undefined}>
       <div className="container header-inner">
-        <Link href="/" className="brand" onClick={() => setOpen(false)}>
+        <Link
+          href="/"
+          className="brand"
+          onClick={() => {
+            setOpen(false);
+            setAccountOpen(false);
+          }}
+        >
           <span className="brand-flower" aria-hidden>
             ✿
           </span>
@@ -30,12 +56,44 @@ export function SiteHeader({
               Кабинет
             </Link>
           ) : (
-            <>
-              <Link href="/cabinet/login">Войти</Link>
-              <Link href="/partner" className="btn btn-primary btn-sm">
+            <div className="header-account" ref={accountRef}>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm header-account__trigger"
+                aria-expanded={accountOpen}
+                aria-haspopup="menu"
+                onClick={() => setAccountOpen((v) => !v)}
+              >
                 Регистрация
-              </Link>
-            </>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path
+                    d="M6 9l6 6 6-6"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+              {accountOpen && (
+                <div className="header-account__menu" role="menu">
+                  <Link
+                    href="/cabinet/login"
+                    role="menuitem"
+                    onClick={() => setAccountOpen(false)}
+                  >
+                    Войти
+                  </Link>
+                  <Link
+                    href="/partner"
+                    role="menuitem"
+                    onClick={() => setAccountOpen(false)}
+                  >
+                    Регистрация
+                  </Link>
+                </div>
+              )}
+            </div>
           )}
         </nav>
 
@@ -67,7 +125,8 @@ export function SiteHeader({
               Кабинет
             </Link>
           ) : (
-            <>
+            <div className="mobile-account">
+              <p className="mobile-account__label">Аккаунт</p>
               <Link href="/cabinet/login" onClick={() => setOpen(false)}>
                 Войти
               </Link>
@@ -79,7 +138,7 @@ export function SiteHeader({
               >
                 Регистрация
               </Link>
-            </>
+            </div>
           )}
         </nav>
       )}
