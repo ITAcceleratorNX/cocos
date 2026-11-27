@@ -11,7 +11,6 @@ export default function PartnerApplyPage() {
     phone: "",
     city: "Алматы",
     nick: "",
-    email: "",
     consent: true,
   });
   const [loading, setLoading] = useState(false);
@@ -43,14 +42,12 @@ export default function PartnerApplyPage() {
         body: JSON.stringify({
           ...form,
           nick: form.nick || undefined,
-          email: form.email || undefined,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
         const map: Record<string, string> = {
           phone_taken: "Этот телефон уже зарегистрирован",
-          email_taken: "Этот email уже зарегистрирован",
           nick_taken: "Ник занят — выберите другой",
           invalid_phone: "Проверьте номер телефона",
           validation: "Проверьте поля формы",
@@ -121,17 +118,6 @@ export default function PartnerApplyPage() {
                 placeholder="+77001234567"
                 value={form.phone}
                 onChange={(phone) => setForm((f) => ({ ...f, phone }))}
-              />
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="email">Email (если SMS недоступен)</label>
-              <input
-                id="email"
-                className="input"
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
               />
             </div>
 

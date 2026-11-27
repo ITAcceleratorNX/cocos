@@ -25,10 +25,11 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-cocos}:${POSTGRES_PASSWORD:-cocos}@db:5432/${POSTGRES_DB:-cocos_partner}?schema=public
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
 
   nginx:
     image: nginx:1.27-alpine
+    profiles: ["with-nginx"]
     restart: unless-stopped
     depends_on:
       - app

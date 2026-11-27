@@ -5,8 +5,7 @@ import { normalizePhone } from "@/lib/phone";
 import { createPartnerSession, safeEqual, verifySmsCode } from "@/lib/auth";
 
 const schema = z.object({
-  phone: z.string().min(10).optional(),
-  email: z.string().email().optional(),
+  phone: z.string().min(10),
   code: z.string().min(4),
 });
 
@@ -17,16 +16,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
 
-  const phone = parsed.data.phone ? normalizePhone(parsed.data.phone) : null;
-  const email = parsed.data.email?.trim().toLowerCase() || null;
-
-  if (!phone && !email) {
-    return NextResponse.json({ error: "phone_or_email_required" }, { status: 400 });
+  const phone = normalizePhone(parsed.data.phone);
+  if (!phone) {
+    return NextResponse.json({ error: "invalid_phone" }, { status: 400 });
   }
 
-  const partner = await prisma.partner.findFirst({
-    where: phone ? { phone } : { email: email! },
-  });
+  const partner = await prisma.partner.findFirst({ where: { phone } });
   if (!partner) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
@@ -35,7 +30,7 @@ export async function POST(req: Request) {
     where: {
       usedAt: null,
       expiresAt: { gt: new Date() },
-      ...(phone ? { phone } : { email: email! }),
+      phone,
     },
     orderBy: { createdAt: "desc" },
   });
@@ -52,13 +47,6 @@ export async function POST(req: Request) {
     await prisma.authCode.update({
       where: { id: latest.id },
       data: { usedAt: new Date() },
-    });
-  }
-
-  if (email && !partner.emailVerifiedAt) {
-    await prisma.partner.update({
-      where: { id: partner.id },
-      data: { emailVerifiedAt: new Date() },
     });
   }
 
