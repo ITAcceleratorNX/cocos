@@ -2,13 +2,41 @@
 
 import { useState } from "react";
 
+async function copyText(value: string) {
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(value);
+      return;
+    } catch {
+      // insecure context (http://IP) — fall through
+    }
+  }
+
+  const ta = document.createElement("textarea");
+  ta.value = value;
+  ta.setAttribute("readonly", "");
+  ta.style.position = "fixed";
+  ta.style.left = "-9999px";
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand("copy");
+  document.body.removeChild(ta);
+}
+
 export function CopyLinkButton({ value, label = "Копировать" }: { value: string; label?: string }) {
   const [ok, setOk] = useState(false);
+  const [err, setErr] = useState(false);
 
   async function copy() {
-    await navigator.clipboard.writeText(value);
-    setOk(true);
-    setTimeout(() => setOk(false), 1200);
+    setErr(false);
+    try {
+      await copyText(value);
+      setOk(true);
+      setTimeout(() => setOk(false), 1200);
+    } catch {
+      setErr(true);
+      setTimeout(() => setErr(false), 2000);
+    }
   }
 
   return (
@@ -18,7 +46,7 @@ export function CopyLinkButton({ value, label = "Копировать" }: { valu
       style={{ padding: "0.35rem 0.7rem", fontSize: "0.8rem", flexShrink: 0 }}
       onClick={copy}
     >
-      {ok ? "OK" : label}
+      {err ? "Ошибка" : ok ? "Скопировано" : label}
     </button>
   );
 }

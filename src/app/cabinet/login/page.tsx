@@ -8,9 +8,7 @@ import { PhoneInput } from "@/components/PhoneInput";
 
 export default function CabinetLoginPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<"phone" | "email">("phone");
   const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [step, setStep] = useState<"id" | "code">("id");
   const [hint, setHint] = useState<string | null>(null);
@@ -25,17 +23,13 @@ export default function CabinetLoginPage() {
       const res = await fetch("/api/auth/request-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(mode === "phone" ? { phone } : { email }),
+        body: JSON.stringify({ phone }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "error");
       setStep("code");
       setHint(
-        data.mock
-          ? `Тестовый код: ${data.code}`
-          : data.channel === "email"
-            ? "Код отправлен на email"
-            : "Код отправлен в SMS",
+        data.mock ? `Тестовый код: ${data.code}` : "Код отправлен в SMS",
       );
     } catch {
       setError("Клиент не найден или заблокирован");
@@ -52,10 +46,7 @@ export default function CabinetLoginPage() {
       const res = await fetch("/api/auth/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code,
-          ...(mode === "phone" ? { phone } : { email }),
-        }),
+        body: JSON.stringify({ code, phone }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "error");
@@ -77,54 +68,21 @@ export default function CabinetLoginPage() {
             <div>
               <p className="eyebrow">Кабинет клиента</p>
               <h1 className="panel-title">Вход</h1>
-              <p className="panel-subtitle">
-                SMS через Mobizon (когда дадут ключ) или email. На MVP код{" "}
-                <code>000000</code>.
-              </p>
+              <p className="panel-subtitle">Код придёт в SMS на ваш номер</p>
             </div>
 
             {step === "id" ? (
               <form onSubmit={requestCode} className="form-stack">
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button
-                    type="button"
-                    className={`btn btn-sm ${mode === "phone" ? "btn-primary" : "btn-ghost"}`}
-                    onClick={() => setMode("phone")}
-                  >
-                    Телефон
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn btn-sm ${mode === "email" ? "btn-primary" : "btn-ghost"}`}
-                    onClick={() => setMode("email")}
-                  >
-                    Email
-                  </button>
+                <div className="form-field">
+                  <label htmlFor="phone">Телефон</label>
+                  <PhoneInput
+                    id="phone"
+                    value={phone}
+                    onChange={setPhone}
+                    placeholder="+77001234567"
+                    required
+                  />
                 </div>
-                {mode === "phone" ? (
-                  <div className="form-field">
-                    <label htmlFor="phone">Телефон</label>
-                    <PhoneInput
-                      id="phone"
-                      value={phone}
-                      onChange={setPhone}
-                      placeholder="+77001234567"
-                      required
-                    />
-                  </div>
-                ) : (
-                  <div className="form-field">
-                    <label htmlFor="email">Email</label>
-                    <input
-                      id="email"
-                      className="input"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                )}
                 {error && <p className="form-error">{error}</p>}
                 <button className="btn btn-primary btn-block" disabled={loading}>
                   {loading ? "Отправляем…" : "Получить код"}
@@ -137,13 +95,15 @@ export default function CabinetLoginPage() {
               <form onSubmit={verify} className="form-stack">
                 {hint && <p className="form-ok">{hint}</p>}
                 <div className="form-field">
-                  <label htmlFor="code">Код</label>
+                  <label htmlFor="code">Код из SMS</label>
                   <input
                     id="code"
                     className="input"
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
-                    placeholder="000000"
+                    placeholder="123456"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
                     required
                   />
                 </div>

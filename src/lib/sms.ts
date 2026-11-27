@@ -21,7 +21,9 @@ export async function sendSms(phone: string, message: string) {
     text: message,
   });
 
-  const res = await fetch(`${base}/message/sendSms`, {
+  // Mobizon docs: Message/SendSmsMessage (not sendSms)
+  const url = `${base}/message/sendSmsMessage?output=json&api=v1`;
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body,
